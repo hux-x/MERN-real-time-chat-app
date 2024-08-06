@@ -40,5 +40,5 @@ export const handleLogin = async (req,res)=>{
 }
 
 export const handleLogout = async (req,res)=>{
-    res.clearCookie('uid').end('user logged out')
+    res.clearCookie('uid').json({message:'you have been logged out'})
 }
