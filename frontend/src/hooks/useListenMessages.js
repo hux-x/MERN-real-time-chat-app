@@ -1,25 +1,28 @@
-import { useEffect } from "react";
-import { useSocketContext } from "../context/socketContext";
-import useMessage from "./useMessage";
+// useListenMessages.js
+import { useEffect } from 'react';
+import { useSocketContext } from '../context/socketContext';
+import useMessage from './useMessage';
 
 export default function useListenMessages(selectedChat) {
-  const { messages,setMessages } = useMessage();
-  const { socket} = useSocketContext();
+  const { messages, setMessages } = useMessage(selectedChat);
+  const { socket } = useSocketContext();
 
   useEffect(() => {
-    setMessages(messages)
     if (!socket || !selectedChat) return;
 
-    const handleNewMessage = (newMessage) => {
-      console.log(newMessage)
-      setMessages({...messages,newMessage});
+    const handleMessage = (newMessage) => {
+      setMessages((prevMessages) => ({
+        ...prevMessages,
+        messages: [...prevMessages.messages, newMessage],
+      }));
     };
 
-    socket.on('newMessage',()=>console.log('new message'));
-    socket.on('test',(x)=>console.log(x,'TESTING TESTING'))
+    socket.on('newMessage', handleMessage);
 
     return () => {
-      socket.off('newMessage', handleNewMessage);
+      socket.off('newMessage', handleMessage);
     };
-  }, [socket, setMessages, selectedChat]);
+  }, [socket, selectedChat, setMessages]);
+
+  return { messages };
 }

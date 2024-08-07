@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { FaPaperPlane } from 'react-icons/fa';
-import useMessage from '../hooks/useMessage';
 import useSendMessage from '../hooks/useSendMessage';
 import moment from 'moment';
+import useListenMessages from '../hooks/useListenMessages';
 
-const ChatDetail = ({ selectedChat, handleCloseDetail, profilePicURL, chatName }) => {
-  const { messages: initialMessages, loading } = useMessage(selectedChat ? selectedChat : null);
-  const [message, setMessage] = useState('');
-  const { loading: sendLoading, sendMessage } = useSendMessage(selectedChat, message);
+const ChatDetail = ({ selectedChat, handleCloseDetail, profilePicURL, chatName,loggedInUserId }) => {
+  const { messages: fetchedMessages } = useListenMessages(selectedChat);
   const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState('');
+  const { sendMessage } = useSendMessage(selectedChat, message);
+
+  useEffect(() => {
+    if (fetchedMessages?.messages) {
+      setMessages(fetchedMessages.messages);
+    }
+  }, [fetchedMessages]);
 
   useEffect(() => {
     const messageContainer = document.getElementById('messageContainer');
@@ -17,37 +23,25 @@ const ChatDetail = ({ selectedChat, handleCloseDetail, profilePicURL, chatName }
     }
   }, [messages]);
 
-  useEffect(() => {
-    if (initialMessages && initialMessages.messages) {
-      setMessages(initialMessages.messages);
-    }
-  }, [initialMessages]);
-
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (message.trim() === '') return;
 
     const newMessage = {
-      _id: Math.random().toString(36).substr(2, 9), // Temporary ID
-      senderId: 'receiver-id',
-      receiverId: selectedChat, // Adjust this according to your data
+      _id: Math.random().toString(36).substr(2, 9), // Generate a temporary id
+      senderId: selectedChat,
       message,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
 
     setMessages((prevMessages) => [...prevMessages, newMessage]);
+
     await sendMessage(message);
     setMessage('');
   };
 
-  const formatDate = (date) => {
-    return moment(date).format('MMMM D, YYYY');
-  };
-
-  const formatTime = (time) => {
-    return moment(time).format('h:mm A');
-  };
+  const formatDate = (date) => moment(date).format('MMMM D, YYYY');
+  const formatTime = (time) => moment(time).format('h:mm A');
 
   const renderDateComponent = (currentDate, previousDate) => {
     if (!previousDate || !moment(currentDate).isSame(previousDate, 'day')) {
@@ -82,7 +76,7 @@ const ChatDetail = ({ selectedChat, handleCloseDetail, profilePicURL, chatName }
     };
 
     let coloredMessage = message;
-    Object.keys(terms).forEach(term => {
+    Object.keys(terms).forEach((term) => {
       const regex = new RegExp(`#${term}`, 'gi');
       if (coloredMessage.match(regex)) {
         coloredMessage = coloredMessage.replace(regex, (match) => {
@@ -110,16 +104,16 @@ const ChatDetail = ({ selectedChat, handleCloseDetail, profilePicURL, chatName }
           </div>
           {/* Conversation Details */}
           <div id="messageContainer" className="flex-1 p-4 overflow-y-auto">
-            {loading ? (
+            {fetchedMessages?.loading ? (
               <div>Loading...</div>
             ) : (
-              messages.length > 0 ? (
+              messages?.length > 0 ? (
                 <div className="space-y-4">
                   {messages.map((msg, index) => (
                     <React.Fragment key={msg._id}>
                       {renderDateComponent(msg.createdAt, index > 0 ? messages[index - 1].createdAt : null)}
-                      <div className={`flex ${msg.senderId !== selectedChat ? 'justify-end' : 'justify-start'} mb-2`}>
-                        <div className={`px-4 py-2 rounded-lg shadow-md max-w-xs ${msg.senderId !== selectedChat ? 'bg-[#d0e8d0] text-[#4a5d23]' : 'bg-[#71a0a5] text-white'}`}>
+                      <div className={`flex ${msg.receiverId !== loggedInUserId ? 'justify-end' : 'justify-start'} mb-2`}>
+                        <div className={`px-4 py-2 rounded-lg shadow-md max-w-xs ${msg.receivererId == selectedChat ? 'bg-[#d0e8d0] text-[#4a5d23]' : 'bg-[#71a0a5] text-white'}`}>
                           <div dangerouslySetInnerHTML={{ __html: getColoredMessage(msg.message) }} />
                           <div className="text-xs text-gray-500 mt-1">{formatTime(msg.createdAt)}</div>
                         </div>
@@ -158,4 +152,3 @@ const ChatDetail = ({ selectedChat, handleCloseDetail, profilePicURL, chatName }
 };
 
 export default ChatDetail;
-

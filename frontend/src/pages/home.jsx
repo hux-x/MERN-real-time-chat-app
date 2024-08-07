@@ -37,7 +37,7 @@ const HomePage = () => {
           </div>
         ) : null}
         <div className={`flex-1 ${isSmallScreen && !selectedChat ? 'hidden' : 'block'} lg:w-2/3 transition-transform duration-300 ease-in-out`}>
-          <ChatDetail chatName={chatName} selectedChat={selectedChat} handleCloseDetail={() => setSelectedChat(null)} profilePicURL={authUser.profilePicURL} />
+          <ChatDetail loggedInUserId ={authUser._id} chatName={chatName} selectedChat={selectedChat} handleCloseDetail={() => setSelectedChat(null)} profilePicURL={authUser.profilePicURL} />
         </div>
       </div>
     </div>
